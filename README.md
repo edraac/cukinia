@@ -153,6 +153,7 @@ cukinia_symlink /etc/alternatives/editor /usr/bin/vim
 - `cukinia_listen4 <tcp|udp> <port>` → validate that a TCP/UDP v4 port is open locally
 - `cukinia_netif_has_ip <ifname> [-4|-6] [flags]` → validate that an interface has IP configuration (examples below)
 - `cukinia_netif_is_up <ifname>` → validate interface state is UP
+- `cukinia_netif_has_flag <ifname> <flag>` → validate that an interface has the provided flag set
 
 **Examples**
 
@@ -163,6 +164,8 @@ cukinia_listen4 tcp 22
 cukinia_netif_has_ip eth0 -4 dynamic
 cukinia_netif_has_ip eth0 -6 "scope global"
 cukinia_netif_is_up eth2
+cukinia_netif_has_flag eth3 IFF_LOOPBACK
+cukinia_netif_has_flag eth3 IFF_UP
 ```
 
 ---
