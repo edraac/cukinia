@@ -47,6 +47,20 @@ fi
 EOF
     chmod +x "$BATS_MOCK_BINDIR/ip"
 
+    # Mock cukinia_netif_has_flag
+    export fakenetif="faketh0"
+
+    cat <<EOF >"$BATS_MOCK_BINDIR/cat"
+#!/bin/sh
+if [ "\$1" = "/sys/class/net/${fakenetif}/flags" ]; then
+    # Print flags with only IFF_UP and IFF_MULTICAST bits set for testcases
+    printf "0x1001"
+else
+    /bin/cat "\$@"
+fi
+EOF
+    chmod +x "$BATS_MOCK_BINDIR/cat"
+
     # Mock cukinia_wifi_is_connected
     cat <<'EOF' >"$BATS_MOCK_BINDIR/iw"
 #!/bin/sh
@@ -91,20 +105,6 @@ esac
 EOF
     chmod +x "$BATS_MOCK_BINDIR/i2cdetect"
 
-    cat <<EOF >"$BATS_MOCK_BINDIR/test"
-#!/bin/sh
-case "\$1 \$2" in
-    "-d /sys/bus/i2c/devices/i2c-$fakebus")
-        exit 0
-        ;;
-    "-L /sys/bus/i2c/devices/$fakebus-0037/driver"|"-L /sys/bus/i2c/devices/$fakebus-003f/driver")
-        exit 0
-        ;;
-esac
-/bin/test "\$@"
-EOF
-    chmod +x "$BATS_MOCK_BINDIR/test"
-
     cat <<EOF >"$BATS_MOCK_BINDIR/readlink"
 #!/bin/sh
 case "\$1 \$2" in
@@ -120,6 +120,27 @@ esac
 /bin/readlink "\$@"
 EOF
     chmod +x "$BATS_MOCK_BINDIR/readlink"
+
+    # Mock test for multiple commands
+    cat <<EOF >"$BATS_MOCK_BINDIR/test"
+#!/bin/sh
+case "\$1 \$2" in
+    "-d /sys/bus/i2c/devices/i2c-$fakebus")
+        exit 0
+        ;;
+    "-L /sys/bus/i2c/devices/$fakebus-0037/driver"|"-L /sys/bus/i2c/devices/$fakebus-003f/driver")
+        exit 0
+        ;;
+    "-f /sys/class/net/${fakenetif}/flags")
+        exit 0
+        ;;
+    "-f /sys/class/net/nonexistent/flags")
+        exit 1
+        ;;
+esac
+/bin/test "\$@"
+EOF
+    chmod +x "$BATS_MOCK_BINDIR/test"
 
     # Mock grep for multiple commands
     cat <<'EOF' >"$BATS_MOCK_BINDIR/grep"

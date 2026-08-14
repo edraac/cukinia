@@ -31,6 +31,7 @@ GENERIC_FUNCTS='cmd
 		listen4
 		matching
 		mount
+		netif_has_flag
 		netif_has_ip
 		netif_is_up
 		process_with_args
@@ -1324,6 +1325,49 @@ _cukinia_netif_is_up() {
 	local interface="$1"
 	_cukinia_prepare "Checking if interface \"$interface\" is ${__not:+NOT }up"
 	[ -f "/sys/class/net/$interface/operstate" ] && [ "$(cat /sys/class/net/$interface/operstate)" = "up" ]
+}
+
+# _cukinia_netif_has_flag: check if a network interface has particular net device flag set
+# arg1: interface name, eg "eth0"
+# arg2: flag to test (as defined in the net_device_flags enum in include/uapi/linux/if.h
+_cukinia_netif_has_flag() {
+	local interface="$1"
+	local flag="$2"
+
+	_cukinia_prepare "Checking interface \"$interface\" has ${__not:+NOT }${flag} flag"
+
+	if [ "$#" -ne 2 ]; then
+		return 1
+	fi
+
+	bit=""
+	case "$flag" in
+	IFF_UP) bit="0" ;;
+	IFF_BROADCAST) bit="1" ;;
+	IFF_DEBUG) bit="2" ;;
+	IFF_LOOPBACK) bit="3" ;;
+	IFF_POINTOPOINT) bit="4" ;;
+	IFF_NOTRAILERS) bit="5" ;;
+	IFF_RUNNING) bit="6" ;;
+	IFF_NOARP) bit="7" ;;
+	IFF_PROMISC) bit="8" ;;
+	IFF_ALLMULTI) bit="9" ;;
+	IFF_MASTER) bit="10" ;;
+	IFF_SLAVE) bit="11" ;;
+	IFF_MULTICAST) bit="12" ;;
+	IFF_PORTSEL) bit="13" ;;
+	IFF_AUTOMEDIA) bit="14" ;;
+	IFF_DYNAMIC) bit="15" ;;
+	IFF_LOWER_UP) bit="16" ;;
+	IFF_DORMANT) bit="17" ;;
+	IFF_ECHO) bit="18" ;;
+	*) return 1 ;;
+	esac
+
+	_test -f /sys/class/net/${interface}/flags || return 1
+
+	local interface_flags=$(cat /sys/class/net/${interface}/flags)
+	_test "$(( (interface_flags >> bit) & 1 ))" = "1" || return 1
 }
 
 # _cukinia_netif_has_ip(): check if an interface has an IP address assigned
